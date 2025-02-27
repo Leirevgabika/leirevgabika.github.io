@@ -341,7 +341,44 @@ function formatearDatosAGeoJSON(datosMeteo, coordenadas) {
         features: features
     };
 }
+// Función para estilizar las características GeoJSON
+function rainStyle(feature) {
+    return {
+        fillColor: getColorByRainIntensity(feature.properties.intensity),
+        weight: 1,
+        opacity: 1,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.7
+    };
+}
+// Añadir información emergente cuando se pasa el mouse por encima de una zona
+function highlightFeature(e) {
+    var layer = e.target;
 
+    layer.setStyle({
+        weight: 2,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.7
+    });
+
+    layer.bringToFront();
+
+    layer.bindPopup("Intensidad de lluvia: " + layer.feature.properties.intensity + " mm/h").openPopup();
+}
+
+// Restablecer estilo cuando el mouse sale de la zona
+function resetHighlight(e) {
+    geojsonLayer.resetStyle(e.target);
+}
+// Configurar listeners para cada característica
+function onEachFeature(feature, layer) {
+    layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight
+    });
+}
 // Ejemplo de uso
 async function añadir_capas_meteo(longitud, latitud, datos) {
     // 1. Definir puntos de la región para la capa de humedad
@@ -359,6 +396,11 @@ async function añadir_capas_meteo(longitud, latitud, datos) {
     //const datosMadrid = await obtenerDatosMeteorologicos(longitud, latitud);
     const geoJsonPrecipitaciones = formatearDatosAGeoJSON(datos, { lat: longitud, lon: latitud });
     const capaPrecipitaciones = crearCapaPrecipitaciones(geoJsonPrecipitaciones);
+
+    var geojsonLayer = L.geoJSON(geoJsonPrecipitaciones, {
+        style: rainStyle,
+        onEachFeature: onEachFeature
+    }).addTo(map);
 
     // 4. Añadir capas al mapa con control de capas
     const capasBase = {

@@ -7,6 +7,8 @@ let imagePreview;
 let analyzeButton;
 let loadingMessage;
 let resultDiv;
+let switchCameraButton;
+
 
 // Variables para almacenar el modelo y la imagen
 let model;
@@ -150,6 +152,31 @@ function handleFileUpload(event) {
     }
 }
 
+// Cambiar entre cámara frontal y trasera
+async function switchCamera() {
+    // Detener la transmisión actual
+    if (video.srcObject) {
+        const stream = video.srcObject;
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+    }
+
+    // Cambiar el modo de la cámara
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+
+    // Reiniciar la cámara con el nuevo modo
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: currentFacingMode }
+        });
+
+        video.srcObject = stream;
+    } catch (error) {
+        console.error('Error al cambiar la cámara:', error);
+        resultDiv.textContent = 'Error al cambiar la cámara. Intenta de nuevo.';
+    }
+}
+
 $(document).ready(function () {
     // Referencias a elementos del DOM
     uploadButton = document.getElementById('uploadButton');
@@ -161,6 +188,7 @@ $(document).ready(function () {
     analyzeButton = document.getElementById('analyzeButton');
     loadingMessage = document.getElementById('loadingMessage');
     resultDiv = document.getElementById('result');
+    switchCameraButton = document.getElementById('switchCameraButton');
 
     // Event listeners
     uploadButton.addEventListener('click', () => fileInput.click());
@@ -168,6 +196,7 @@ $(document).ready(function () {
     cameraButton.addEventListener('click', startCamera);
     captureButton.addEventListener('click', captureImage);
     analyzeButton.addEventListener('click', analyzeImage);
+    switchCameraButton.addEventListener('click', switchCamera);
 
     // Cargar el modelo al iniciar
     loadModel();
